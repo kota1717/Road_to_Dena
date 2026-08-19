@@ -1,0 +1,51 @@
+CREATE TABLE Users(
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+); 
+
+CREATE TABLE Teams(
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE Seats(
+    id BIGSERIAL PRIMARY KEY,
+    seat_number VARCHAR(50) NOT NULL,
+    grade VARCHAR(2) NOT NULL,
+    price INTEGER NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE Games(
+    id BIGSERIAL PRIMARY KEY,
+    home_team_id BIGINT NOT NULL REFERENCES teams(id),
+    away_team_id BIGINT NOT NULL REFERENCES teams(id),
+    starts_at TIMESTAMPTZ NOT NULL,
+    venue VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE Reservations(
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    status VARCHAR(20) NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE tickets(
+    id BIGSERIAL PRIMARY KEY,
+    game_id BIGINT NOT NULL REFERENCES games(id),
+    seat_id BIGINT NOT NULL REFERENCES seats(id),
+    reservation_id BIGINT NULL REFERENCES reservations(id),
+    status VARCHAR(20) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (game_id, seat_id)
+);
