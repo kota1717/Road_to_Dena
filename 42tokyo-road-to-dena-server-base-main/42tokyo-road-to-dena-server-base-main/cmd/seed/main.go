@@ -9,6 +9,15 @@ import (
 )
 
 func main() {
+	db := connectDB()
+	defer db.Close()
+
+	truncateTables(db)
+
+	teamIDs := seedTeams(db)
+}
+
+func connectDB() *sql.DB {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		dbURL = "postgres://postgres:postgres@localhost:55432/road_to_dena?sslmode=disable"
@@ -16,33 +25,32 @@ func main() {
 
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
-		log.Fatalf("接続情報の設定に失敗しました: %v", err)
+		log.Fatalf("接続設定エラー: %v", err)
 	}
-	defer db.Close()
-
 	if err := db.Ping(); err != nil {
-		log.Fatalf("DBへの接続に失敗しました: %v", err)
+		log.Fatalf("DB接続エラー: %v", err)
 	}
-	
-	fmt.Println("DB接続成功！これよりマスターデータの投入処理に入ります。")
+	return db
+}
 
+func truncateTables(db *sql.DB) {
+	truncateSQL := `TRUNCATE TABLE users, teams, games, 
+					reservations, seats, tickets RESTART IDENTITY CASCADE;`
+	if _, err := db.Exec(truncateSQL); err != nil {
+		log.Fatalf("テーブル初期化失敗: %v", err)
+	}
+	fmt.Println("テーブル初期化")
+}
+
+func seedTeams(db *sql.DB) {
 	teamNames := []string{
-		"横浜DeNAベイスターズ", "阪神タイガース", "読光ジャイアンツ", 
-    	"広島東洋カープ", "東京ヤクルトスワローズ", "中日ドラゴンズ",
-    	"オリックス・バファローズ", "千葉ロッテマリーンズ", "福岡ソフトバンクホークス",
-    	"東北楽天ゴールデンイーグルス", "北海道日本ハムファイターズ", "埼玉西武ライオンズ",
+			"横浜DeNAベイスターズ", "阪神タイガース", "読光ジャイアンツ", 
+    		"広島東洋カープ", "東京ヤクルトスワローズ", "中日ドラゴンズ",
+    		"オリックス・バファローズ", "千葉ロッテマリーンズ", "福岡ソフトバンクホークス",
+    		"東北楽天ゴールデンイーグルス", "北海道日本ハムファイターズ", "埼玉西武ライオンズ",
 	}
 
 	var teamIDs []int64
-
-	truncateSQL := `TRUNCATE TABLE users, teams, games, 
-					reservations, seats, tickets RESTART IDENTITY CASCADE;`
-	_, err = db.Exec(truncateSQL)
-	if err != nil {
-		log.Fatalf("テーブルの初期化に失敗しました: %v", err)
-	}
-
-	fmt.Println("テーブルを初期化し、IDの連番をリセットしました。")
 
 	for _, name := range teamNames{
 		var id int64
@@ -57,4 +65,5 @@ func main() {
 	}
 
 	fmt.Printf("%d 件のチームデータを投入しました。 \n", len(teamIDs))
+	return teamIDs
 }
