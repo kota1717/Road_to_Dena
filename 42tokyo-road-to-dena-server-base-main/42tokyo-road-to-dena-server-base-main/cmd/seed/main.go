@@ -15,6 +15,12 @@ func main() {
 	truncateTables(db)
 
 	teamIDs := seedTeams(db)
+
+	seatIDs := seedSeats(db)
+
+	seedGamesAndTickets(db, teamIDs, seatIDs)
+	
+	fmt.Println("すべてのマスターデータ・初期データの投入が完了しました！")
 }
 
 func connectDB() *sql.DB {
@@ -51,7 +57,6 @@ func seedTeams(db *sql.DB) {
 	}
 
 	var teamIDs []int64
-
 	for _, name := range teamNames{
 		var id int64
 		query := `INSERT INTO teams (name) VALUES ($1) RETURNING id;`
@@ -59,11 +64,22 @@ func seedTeams(db *sql.DB) {
 		err := db.QueryRow(query, name).Scan(&id)
 		if err != nil {
 			log.Fatalf("チームデータの挿入に失敗しました (%s): %v", name, err)
-		}
-		
+		}		
 		teamIDs = append(teamIDs, id)
 	}
-
 	fmt.Printf("%d 件のチームデータを投入しました。 \n", len(teamIDs))
 	return teamIDs
+}
+
+func seedSeats(db *sql.DB) {
+	seats := []struct {
+		seatType string
+		price 	 int
+	}{
+		{"SS席", 10000},
+		{"S席", 5000},
+		{"A席", 3000},
+		{"B席", 2000},
+	}
+	
 }
