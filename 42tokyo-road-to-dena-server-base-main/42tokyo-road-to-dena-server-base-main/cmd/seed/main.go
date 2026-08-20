@@ -26,6 +26,15 @@ func main() {
 	
 	fmt.Println("DB接続成功！これよりマスターデータの投入処理に入ります。")
 
+	teamNames := []string{
+		"横浜DeNAベイスターズ", "阪神タイガース", "読光ジャイアンツ", 
+    	"広島東洋カープ", "東京ヤクルトスワローズ", "中日ドラゴンズ",
+    	"オリックス・バファローズ", "千葉ロッテマリーンズ", "福岡ソフトバンクホークス",
+    	"東北楽天ゴールデンイーグルス", "北海道日本ハムファイターズ", "埼玉西武ライオンズ",
+	}
+
+	var teamIDs []int64
+
 	truncateSQL := `TRUNCATE TABLE users, teams, games, 
 					reservations, seats, tickets RESTART IDENTITY CASCADE;`
 	_, err = db.Exec(truncateSQL)
@@ -34,4 +43,18 @@ func main() {
 	}
 
 	fmt.Println("テーブルを初期化し、IDの連番をリセットしました。")
+
+	for _, name := range teamNames{
+		var id int64
+		query := `INSERT INTO teams (name) VALUES ($1) RETURNING id;`
+
+		err := db.QueryRow(query, name).Scan(&id)
+		if err != nil {
+			log.Fatalf("チームデータの挿入に失敗しました (%s): %v", name, err)
+		}
+		
+		teamIDs = append(teamIDs, id)
+	}
+
+	fmt.Printf("%d 件のチームデータを投入しました。 \n", len(teamIDs))
 }
